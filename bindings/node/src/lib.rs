@@ -29,3 +29,21 @@ pub fn format_cents(cents: String) -> napi::Result<String> {
 pub fn format_decimal(amount: String) -> napi::Result<String> {
     rmb_upper::format_decimal(&amount).map_err(to_napi_error)
 }
+
+/// Parses Chinese uppercase RMB text into a string of cents.
+#[napi]
+pub fn parse_cents(text: String) -> napi::Result<String> {
+    rmb_upper::parse_cents(&text)
+        .map(|cents| cents.to_string())
+        .map_err(to_parse_error)
+}
+
+/// Parses Chinese uppercase RMB text into a fixed two-decimal string.
+#[napi]
+pub fn parse_decimal(text: String) -> napi::Result<String> {
+    rmb_upper::parse_decimal(&text).map_err(to_parse_error)
+}
+
+fn to_parse_error(error: rmb_upper::ParseError) -> napi::Error {
+    napi::Error::from_reason(error.to_string())
+}

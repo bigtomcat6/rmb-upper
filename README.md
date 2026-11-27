@@ -67,6 +67,26 @@ The Rust APIs return `Result<String, FormatError>`. Possible error variants incl
 - `TooManyDecimalPlaces`
 - `TooLarge`
 
+## Parsing uppercase amounts
+
+`parse_cents` converts Chinese uppercase RMB text back into an integer number of cents:
+
+```rust
+use rmb_upper::parse_cents;
+
+assert_eq!(parse_cents("壹万贰仟叁佰肆拾伍元陆角柒分").unwrap(), 1_234_567);
+```
+
+`parse_decimal` returns the same value as a fixed two-decimal string:
+
+```rust
+use rmb_upper::parse_decimal;
+
+assert_eq!(parse_decimal("零元伍分").unwrap(), "0.05");
+```
+
+Parsing accepts an optional `人民币` prefix, surrounding whitespace, and the traditional characters listed in the financial uppercase rules. Invalid input returns `ParseError` with a `ParseErrorKind` and a zero-based character position in the original input. When an amount has an integer part, `元`/`圆`/`圓` is required; ambiguous spellings are rejected.
+
 ## Node.js / N-API usage
 
 The original `formatNumber(number)` API is still available for compatibility. It accepts a JavaScript number and rounds to the nearest cent.
