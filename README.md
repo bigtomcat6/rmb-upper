@@ -102,7 +102,7 @@ pnpm i
 pnpm build
 ```
 
-The N-API build enables the `napi` feature and compiles the Rust core into a Node.js native addon.
+The N-API build compiles the Rust core in `bindings/node` into a Node.js native addon.
 
 ## Testing
 

@@ -1,6 +1,8 @@
+#![deny(clippy::all)]
+
 use napi_derive::napi;
 
-fn to_napi_error(error: crate::FormatError) -> napi::Error {
+fn to_napi_error(error: rmb_upper::FormatError) -> napi::Error {
     napi::Error::from_reason(error.to_string())
 }
 
@@ -10,7 +12,7 @@ fn to_napi_error(error: crate::FormatError) -> napi::Error {
 /// Prefer `formatDecimal` for deterministic financial formatting.
 #[napi]
 pub fn format_number(amount: f64) -> napi::Result<String> {
-    crate::format_f64(amount).map_err(to_napi_error)
+    rmb_upper::format_f64(amount).map_err(to_napi_error)
 }
 
 /// Converts an amount represented in cents into uppercase RMB text.
@@ -19,11 +21,11 @@ pub fn format_number(amount: f64) -> napi::Result<String> {
 /// number precision for large cent values.
 #[napi]
 pub fn format_cents(cents: String) -> napi::Result<String> {
-    crate::format_cents_str(&cents).map_err(to_napi_error)
+    rmb_upper::format_cents_str(&cents).map_err(to_napi_error)
 }
 
 /// Parses a decimal amount string and converts it into uppercase RMB text.
 #[napi]
 pub fn format_decimal(amount: String) -> napi::Result<String> {
-    crate::format_decimal(&amount).map_err(to_napi_error)
+    rmb_upper::format_decimal(&amount).map_err(to_napi_error)
 }

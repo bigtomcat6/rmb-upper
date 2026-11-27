@@ -24,13 +24,10 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Compile check
-        run: cargo check --all-targets
+        run: cargo check --workspace --all-targets
 
       - name: Run clippy
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Run Rust tests
-        run: cargo test
-
-      - name: Check N-API feature build
-        run: cargo test --features napi
+        run: cargo test --workspace

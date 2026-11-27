@@ -26,8 +26,8 @@
   },
   "scripts": {
     "artifacts": "napi artifacts",
-    "build": "napi build --platform --release --features napi",
-    "build:debug": "napi build --platform --features napi",
+    "build": "napi build --platform --release --cargo-cwd bindings/node",
+    "build:debug": "napi build --platform --cargo-cwd bindings/node",
     "prepublishOnly": "napi prepublish -t npm",
     "test": "cargo test",
     "test:js": "jest --passWithNoTests",
