@@ -1,12 +1,23 @@
 use std::error::Error;
 use std::fmt;
 
+/// Error returned by the formatting functions when an amount cannot be
+/// formatted.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FormatError {
+    /// The amount is negative.
     NegativeAmount,
+    /// The amount is NaN or infinite.
     NonFiniteAmount,
+    /// The input string is not a valid unsigned decimal amount, for example
+    /// an empty string or a lone `.`.
     InvalidFormat,
+    /// The fractional part is longer than two bytes (more than two decimal
+    /// places for ASCII input). This is checked before validating the
+    /// fraction's characters, so `1.xyz` reports this variant rather than
+    /// `InvalidFormat`.
     TooManyDecimalPlaces,
+    /// The amount exceeds [`MAX_CENTS`](crate::MAX_CENTS).
     TooLarge,
 }
 
@@ -48,11 +59,18 @@ pub enum ParseErrorKind {
     /// The input is empty after removing surrounding whitespace and the
     /// `人民币` prefix.
     Empty,
-    /// The input contains a character that is not allowed.
+    /// A character in the input is not allowed, such as a lowercase numeral,
+    /// an Arabic digit, or whitespace inside the amount. This lexical check
+    /// runs before structural parsing, so `壹元整X` is `InvalidChar`.
     InvalidChar,
-    /// The amount is written in a way that is ambiguous.
+    /// The amount is ambiguous, for example a section-final digit that could
+    /// be a unit digit or shorthand for the next lower unit
+    /// (`壹仟肆佰玖元` can mean 1490 or 1409 yuan).
     Ambiguous,
-    /// The token structure is invalid, for example a repeated unit.
+    /// The token structure is invalid, for example a repeated or out-of-order
+    /// unit, a misplaced `零`, mixed `兆` and `万亿` spellings, repeated
+    /// `元`/`角`/`分`, a recognized token after `整` (`壹元整伍角`), or a
+    /// bare `整` with no amount.
     UnexpectedToken,
     /// An integer part is present but `元`, `圆` or `圓` is missing.
     MissingYuan,
