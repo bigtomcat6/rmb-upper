@@ -103,3 +103,7 @@ Parsing accepts an optional `人民币` prefix, surrounding whitespace, the trad
 cargo build
 cargo test
 ```
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE).
