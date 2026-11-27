@@ -1,5 +1,3 @@
-#![cfg(not(feature = "napi"))]
-
 use rmb_upper::*;
 
 #[test]
