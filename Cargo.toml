@@ -9,10 +9,3 @@ readme = "README.md"
 keywords = ["rmb", "cny", "daxie", "uppercase", "chinese"]
 categories = ["value-formatting", "internationalization"]
 include = ["/src/**/*", "/README.md", "/LICENSE"]
-
-[workspace]
-members = ["bindings/node"]
-
-[profile.release]
-lto = true
-strip = "symbols"
