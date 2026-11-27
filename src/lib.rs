@@ -3,8 +3,9 @@
 mod error;
 mod format;
 mod input;
+mod parse;
 
-pub use error::FormatError;
+pub use error::{FormatError, ParseError, ParseErrorKind};
 
 pub const MAX_YUAN: i128 = 9_999_999_999_999_999;
 pub const MAX_CENTS: i128 = MAX_YUAN * 100 + 99;
@@ -46,4 +47,23 @@ pub fn format_f64(amount: f64) -> Result<String, FormatError> {
     }
 
     format_cents(cents as i128)
+}
+
+/// Parses Chinese uppercase RMB text into an integer number of cents.
+///
+/// The parser accepts the variants allowed by the financial uppercase amount
+/// rules, including traditional characters, an optional `人民币` prefix and
+/// surrounding whitespace. Error positions are zero-based character offsets
+/// in the original input.
+pub fn parse_cents(text: &str) -> Result<i128, ParseError> {
+    parse::parse_cents(text)
+}
+
+/// Parses Chinese uppercase RMB text into a fixed two-decimal string.
+///
+/// For example, `"零元伍分"` becomes `"0.05"` and `"壹佰元整"` becomes
+/// `"100.00"`.
+pub fn parse_decimal(text: &str) -> Result<String, ParseError> {
+    let cents = parse_cents(text)?;
+    Ok(format!("{}.{:02}", cents / 100, cents % 100))
 }

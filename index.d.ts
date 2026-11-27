@@ -19,3 +19,7 @@ export declare function formatNumber(amount: number): string
 export declare function formatCents(cents: string): string
 /** Parses a decimal amount string and converts it into uppercase RMB text. */
 export declare function formatDecimal(amount: string): string
+/** Parses Chinese uppercase RMB text into a string of cents. */
+export declare function parseCents(text: string): string
+/** Parses Chinese uppercase RMB text into a fixed two-decimal string. */
+export declare function parseDecimal(text: string): string

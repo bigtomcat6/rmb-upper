@@ -295,8 +295,10 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { formatNumber, formatCents, formatDecimal } = nativeBinding
+const { formatNumber, formatCents, formatDecimal, parseCents, parseDecimal } = nativeBinding
 
 module.exports.formatNumber = formatNumber
 module.exports.formatCents = formatCents
 module.exports.formatDecimal = formatDecimal
+module.exports.parseCents = parseCents
+module.exports.parseDecimal = parseDecimal
