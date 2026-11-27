@@ -101,12 +101,17 @@ fn entries_agree_and_structural_invariants_hold() {
             cents < 100,
             "零元 only below one yuan for {cents}: {from_cents}"
         );
-        if has_zero_yuan {
-            assert!(
-                from_cents.starts_with("零元"),
-                "零元 must be at the start for {cents}: {from_cents}"
-            );
-        }
+        let rest = if cents < 100 {
+            from_cents
+                .strip_prefix("零元")
+                .unwrap_or_else(|| panic!("零元 must be at the start for {cents}: {from_cents}"))
+        } else {
+            &from_cents
+        };
+        assert!(
+            !rest.contains("零元"),
+            "零元 must only appear as the prefix for {cents}: {from_cents}"
+        );
 
         assert_eq!(
             from_cents.ends_with('整'),
