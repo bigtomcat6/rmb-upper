@@ -1,6 +1,6 @@
-const { rmbToRmb } = require("../index.js");
+const { formatNumber } = require("../index.js");
 
-describe('rmbToRmb', () => {
+describe('formatNumber', () => {
 
     let numbers = [];
     for (let i = 0; i < 1000; i++) {
@@ -9,7 +9,7 @@ describe('rmbToRmb', () => {
 
     const nzhcn = require("nzh/cn");
     test.each(numbers)(`should convert %s`, (n) => {
-        expect(rmbToRmb(n)).toBe(nzhcn.toMoney(n, {outSymbol:false}));
+        expect(formatNumber(n)).toBe(nzhcn.toMoney(n, {outSymbol:false}));
     })
 
 });

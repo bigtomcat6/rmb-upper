@@ -1,4 +1,4 @@
-# rmbToRMB-rs
+# rmb-upper
 
 Convert RMB/CNY amounts into Chinese uppercase financial text.
 
@@ -9,40 +9,40 @@ Convert RMB/CNY amounts into Chinese uppercase financial text.
 
 ## Rust usage
 
-The recommended API is `to_rmb_upper_from_cents`, because it represents money as an integer number of cents and avoids floating-point precision issues.
+The recommended API is `format_cents`, because it represents money as an integer number of cents and avoids floating-point precision issues.
 
 ```rust
-use rmb_upper::to_rmb_upper_from_cents;
+use rmb_upper::format_cents;
 
 fn main() {
-  let value = to_rmb_upper_from_cents(12_345).unwrap();
+  let value = format_cents(12_345).unwrap();
   assert_eq!(value, "壹佰贰拾叁元肆角伍分");
 }
 ```
 
-For decimal strings, use `to_rmb_upper_from_str`:
+For decimal strings, use `format_decimal`:
 
 ```rust
-use rmb_upper::to_rmb_upper_from_str;
+use rmb_upper::format_decimal;
 
-assert_eq!(to_rmb_upper_from_str("123.45").unwrap(), "壹佰贰拾叁元肆角伍分");
-assert_eq!(to_rmb_upper_from_str("0.01").unwrap(), "零元壹分");
+assert_eq!(format_decimal("123.45").unwrap(), "壹佰贰拾叁元肆角伍分");
+assert_eq!(format_decimal("0.01").unwrap(), "零元壹分");
 ```
 
-For cross-language bindings or platforms where large integers may lose precision, use `to_rmb_upper_from_cents_str`:
+For cross-language bindings or platforms where large integers may lose precision, use `format_cents_str`:
 
 ```rust
-use rmb_upper::to_rmb_upper_from_cents_str;
+use rmb_upper::format_cents_str;
 
-assert_eq!(to_rmb_upper_from_cents_str("12345").unwrap(), "壹佰贰拾叁元肆角伍分");
+assert_eq!(format_cents_str("12345").unwrap(), "壹佰贰拾叁元肆角伍分");
 ```
 
 The `f64` adapter exists for compatibility only:
 
 ```rust
-use rmb_upper::to_rmb_upper_from_f64;
+use rmb_upper::format_f64;
 
-assert_eq!(to_rmb_upper_from_f64(123.45).unwrap(), "壹佰贰拾叁元肆角伍分");
+assert_eq!(format_f64(123.45).unwrap(), "壹佰贰拾叁元肆角伍分");
 ```
 
 Prefer the cents or string APIs for financial code.
@@ -59,7 +59,7 @@ The maximum supported amount in cents is exposed as `MAX_CENTS`.
 
 ## Errors
 
-The Rust APIs return `Result<String, RmbError>`. Possible error variants include:
+The Rust APIs return `Result<String, FormatError>`. Possible error variants include:
 
 - `NegativeAmount`
 - `NonFiniteAmount`
@@ -69,21 +69,21 @@ The Rust APIs return `Result<String, RmbError>`. Possible error variants include
 
 ## Node.js / N-API usage
 
-The original `rmbToRmb(number)` API is still available for compatibility. It accepts a JavaScript number and rounds to the nearest cent.
+The original `formatNumber(number)` API is still available for compatibility. It accepts a JavaScript number and rounds to the nearest cent.
 
 ```ts
-import { rmbToRmb } from '@rs/rmb-to-rmb'
+import { formatNumber } from 'rmb-upper'
 
-rmbToRmb(123.45) // "壹佰贰拾叁元肆角伍分"
+formatNumber(123.45) // "壹佰贰拾叁元肆角伍分"
 ```
 
 For deterministic formatting, prefer string-based APIs:
 
 ```ts
-import { rmbToRmbFromCents, rmbToRmbFromString } from '@rs/rmb-to-rmb'
+import { formatCents, formatDecimal } from 'rmb-upper'
 
-rmbToRmbFromCents('12345') // "壹佰贰拾叁元肆角伍分"
-rmbToRmbFromString('123.45') // "壹佰贰拾叁元肆角伍分"
+formatCents('12345') // "壹佰贰拾叁元肆角伍分"
+formatDecimal('123.45') // "壹佰贰拾叁元肆角伍分"
 ```
 
 ## Building

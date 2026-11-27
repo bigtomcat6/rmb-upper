@@ -1,3 +1,3 @@
-# `RS-rmbToRMB-linux-x64-gnu`
+# `rmb-upper-linux-x64-gnu`
 
-This is the **x86_64-unknown-linux-gnu** binary for `RS-rmbToRMB`
+This is the **x86_64-unknown-linux-gnu** binary for `rmb-upper`

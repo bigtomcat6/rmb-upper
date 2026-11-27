@@ -1,5 +1,5 @@
 {
-  "name": "RS-rmbToRMB-darwin-x64",
+  "name": "rmb-upper-darwin-x64",
   "version": "0.0.0",
   "os": [
     "darwin"
@@ -7,9 +7,9 @@
   "cpu": [
     "x64"
   ],
-  "main": "RS-rmbToRMB.darwin-x64.node",
+  "main": "rmb-upper.darwin-x64.node",
   "files": [
-    "RS-rmbToRMB.darwin-x64.node"
+    "rmb-upper.darwin-x64.node"
   ],
   "license": "MIT",
   "engines": {
