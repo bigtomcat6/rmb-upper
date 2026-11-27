@@ -1,12 +1,19 @@
 use std::error::Error;
 use std::fmt;
 
+/// Error returned by the formatting functions when an amount cannot be
+/// formatted.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FormatError {
+    /// The amount is negative.
     NegativeAmount,
+    /// The amount is NaN or infinite.
     NonFiniteAmount,
+    /// The input string is not a valid unsigned decimal amount.
     InvalidFormat,
+    /// The amount has more than two decimal places.
     TooManyDecimalPlaces,
+    /// The amount exceeds [`MAX_CENTS`](crate::MAX_CENTS).
     TooLarge,
 }
 
@@ -48,11 +55,16 @@ pub enum ParseErrorKind {
     /// The input is empty after removing surrounding whitespace and the
     /// `人民币` prefix.
     Empty,
-    /// The input contains a character that is not allowed.
+    /// The input contains a character that is not allowed, such as a
+    /// lowercase numeral, an Arabic digit, or whitespace inside the amount.
     InvalidChar,
-    /// The amount is written in a way that is ambiguous.
+    /// The amount is ambiguous, for example a section-final digit that could
+    /// be a unit digit or shorthand for the next lower unit
+    /// (`壹仟肆佰玖元` can mean 1490 or 1409 yuan).
     Ambiguous,
-    /// The token structure is invalid, for example a repeated unit.
+    /// The token structure is invalid, for example a repeated or out-of-order
+    /// unit, a misplaced `零`, mixed `兆` and `万亿` spellings, repeated
+    /// `元`/`角`/`分`, or text after `整`.
     UnexpectedToken,
     /// An integer part is present but `元`, `圆` or `圓` is missing.
     MissingYuan,

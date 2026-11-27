@@ -1,11 +1,17 @@
 # rmb-upper
 
-Convert RMB/CNY amounts into Chinese uppercase financial text.
+Convert RMB/CNY amounts to and from Chinese uppercase financial text (人民币金额大写).
 
 这个项目现在由两层组成：
 
 1. **Pure Rust library**: 可直接被 Rust backend、CLI、WASM 或其他 binding 复用。
 2. **N-API wrapper**: 保留原来的 Node.js 原生扩展能力。
+
+## Installation
+
+```bash
+cargo add rmb-upper
+```
 
 ## Rust usage
 
@@ -49,13 +55,20 @@ Prefer the cents or string APIs for financial code.
 
 ## Supported range
 
-The maximum supported integer part is:
+The maximum supported integer part is `MAX_YUAN`:
 
 ```text
-9999兆9999亿9999万9999
+9999万9999亿9999万9999
 ```
 
-The maximum supported amount in cents is exposed as `MAX_CENTS`.
+The maximum supported amount in cents is exposed as `MAX_CENTS` (`MAX_YUAN * 100 + 99`).
+
+## Formatting rules
+
+- The integer part is grouped into four-digit sections with units `万` and `亿`. Amounts of 10¹² and above use the `万亿` spelling (for example `壹万亿元整`); `兆` is never emitted.
+- A trailing `整` is written when and only when the amount is a whole number of yuan. An amount ending in `角` or `分` has no `整`.
+- Tens are always written as `壹拾`, never as a bare `拾`.
+- Consecutive zeros collapse into one `零`, and a section smaller than 1000 after a higher section is prefixed with `零`. After `元`, `零` is written when there is a `分` but no `角`, or when `角` is present and the integer part ends in zero: `1680.32` becomes `壹仟陆佰捌拾元零叁角贰分`. `零零` never appears.
 
 ## Errors
 
@@ -106,6 +119,8 @@ formatCents('12345') // "壹佰贰拾叁元肆角伍分"
 formatDecimal('123.45') // "壹佰贰拾叁元肆角伍分"
 ```
 
+The N-API wrapper is built with [napi-rs](https://github.com/napi-rs/napi-rs).
+
 ## Building
 
 ### Rust library
@@ -135,7 +150,3 @@ For JavaScript tests:
 ```bash
 pnpm test:js
 ```
-
-## Related projects
-
-- [napi-rs](https://github.com/napi-rs/napi-rs)
