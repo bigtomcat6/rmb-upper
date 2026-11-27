@@ -8,20 +8,10 @@ repository = "https://github.com/bigtomcat6/rmb-upper"
 readme = "README.md"
 keywords = ["rmb", "cny", "daxie", "uppercase", "chinese"]
 categories = ["value-formatting", "internationalization"]
+include = ["/src/**/*", "/README.md", "/LICENSE"]
 
-[lib]
-crate-type = ["rlib", "cdylib"]
-
-[features]
-default = []
-napi = ["dep:napi", "dep:napi-derive"]
-
-[dependencies]
-napi = { version = "2.12.2", default-features = false, features = ["napi4"], optional = true }
-napi-derive = { version = "2.12.2", optional = true }
-
-[build-dependencies]
-napi-build = "2.0.1"
+[workspace]
+members = ["bindings/node"]
 
 [profile.release]
 lto = true

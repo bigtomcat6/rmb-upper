@@ -4,9 +4,6 @@ mod error;
 mod format;
 mod input;
 
-#[cfg(feature = "napi")]
-mod napi_bindings;
-
 pub use error::FormatError;
 
 pub const MAX_YUAN: i128 = 9_999_999_999_999_999;

@@ -1,9 +1,3 @@
-// Integration tests link the library as a separate rlib; with the `napi`
-// feature on that rlib carries Node C symbols a test executable cannot link.
-// Keep the five core smoke tests running under `cargo test`; the napi-enabled
-// build is checked separately (`cargo build --features napi`, `pnpm build`).
-#![cfg(not(feature = "napi"))]
-
 use rmb_upper::*;
 
 fn s(codes: &[u32]) -> String {
