@@ -68,7 +68,7 @@ The maximum supported amount in cents is exposed as `MAX_CENTS` (`MAX_YUAN * 100
 - The integer part is grouped into four-digit sections with units `万` and `亿`. Amounts of 10¹² and above use the `万亿` spelling (for example `壹万亿元整`); `兆` is never emitted.
 - A trailing `整` is written when and only when the amount is a whole number of yuan. An amount ending in `角` or `分` has no `整`.
 - Tens are always written as `壹拾`, never as a bare `拾`.
-- Consecutive zeros collapse into one `零`, and a section smaller than 1000 after a higher section is prefixed with `零`. After `元`, `零` is written when there is a `分` but no `角`, or when `角` is present and the integer part ends in zero: `1680.32` becomes `壹仟陆佰捌拾元零叁角贰分`. `零零` never appears.
+- Consecutive zeros in the integer part collapse into one `零`. A skipped group or a group smaller than 1000 after a higher group is prefixed with `零`: `100001000` becomes `壹亿零壹仟元整`. After `元`, `零` is written only when the integer part is non-zero and either there is a `分` but no `角`, or `角` is present and the integer part ends in zero: `1680.32` becomes `壹仟陆佰捌拾元零叁角贰分`. A zero-yuan amount does not gain an extra `零` after `元`: `0.05` is `零元伍分`. `零零` never appears.
 
 ## Errors
 
@@ -98,7 +98,7 @@ use rmb_upper::parse_decimal;
 assert_eq!(parse_decimal("零元伍分").unwrap(), "0.05");
 ```
 
-Parsing accepts an optional `人民币` prefix, surrounding whitespace, and the traditional characters listed in the financial uppercase rules. Invalid input returns `ParseError` with a `ParseErrorKind` and a zero-based character position in the original input. When an amount has an integer part, `元`/`圆`/`圓` is required; ambiguous spellings are rejected.
+Parsing accepts an optional `人民币` prefix, surrounding whitespace, the traditional characters listed in the financial uppercase rules, and fraction-only amounts such as `伍角` or `伍分` without `元`. Invalid input returns `ParseError` with a `ParseErrorKind` and a zero-based character position in the original input. When an amount has an integer part, `元`/`圆`/`圓` is required; ambiguous spellings are rejected.
 
 ## Node.js / N-API usage
 

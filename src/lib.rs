@@ -28,11 +28,14 @@
 //! - A trailing `整` is written when and only when the amount is a whole
 //!   number of yuan. An amount ending in `角` or `分` has no `整`.
 //! - Tens are always written as `壹拾`, never as a bare `拾`.
-//! - Consecutive zeros in the integer part collapse into a single `零`, and a
-//!   section smaller than 1000 after a higher section is prefixed with `零`.
-//!   After `元`, a `零` is written when there is a `分` but no `角`, or when
-//!   `角` is present and the integer part ends in zero
-//!   (`1680.32` becomes `壹仟陆佰捌拾元零叁角贰分`). `零零` never appears.
+//! - Consecutive zeros in the integer part collapse into a single `零`. A
+//!   skipped group or a group smaller than 1000 after a higher group is
+//!   prefixed with `零` (`100001000` becomes `壹亿零壹仟元整`), and `零零`
+//!   never appears. After `元`, a `零` is written only when the integer part
+//!   is non-zero and either there is a `分` but no `角`, or `角` is present
+//!   and the integer part ends in zero (`1680.32` becomes
+//!   `壹仟陆佰捌拾元零叁角贰分`). A zero-yuan amount does not gain an extra
+//!   `零` after `元` (`0.05` is `零元伍分`).
 //! - The supported range is [`MAX_YUAN`] yuan or [`MAX_CENTS`] cents,
 //!   inclusive.
 //!
@@ -43,16 +46,20 @@
 //! characters `貳`, `參`/`叄`, `陸`, `萬`, `億`, and `圓`, either
 //! `元`/`圆`/`圓`, an optional `整`/`正` after `元` or `角` (and tolerates it
 //! after `分`), omitted `零` where the rules allow it, a leading `拾` meaning
-//! `壹拾`, and both the `兆` and `万亿` spellings for values of 10¹² and above
-//! (but not a mixture of the two).
+//! `壹拾`, fraction-only amounts such as `伍角` or `伍分` without `元`, and
+//! both the `兆` and `万亿` spellings for values of 10¹² and above (but not a
+//! mixture of the two).
 //!
 //! It rejects lowercase numerals and other non-standard characters (`一`,
 //! `二`, `两`, `十`, `〇`, `念`, `毛`, `另`, Arabic digits), whitespace inside
 //! the amount, an ambiguous trailing digit in a section (`壹仟肆佰玖元`,
 //! `壹佰伍元`, `壹万伍元`, `壹亿伍万元`), repeated or out-of-order units,
-//! misplaced zeros, out-of-order or repeated `元`/`角`/`分`, text after `整`,
-//! and an integer part without `元`. Errors carry a [`ParseErrorKind`] and a
-//! zero-based character position.
+//! misplaced zeros, out-of-order or repeated `元`/`角`/`分`, a recognized
+//! token after `整` (`壹元整伍角`), a bare `整` with no amount, and an
+//! integer part without `元`. Illegal characters are rejected before
+//! structural parsing, so `壹元整X` is an invalid character rather than a
+//! structural error. Errors carry a [`ParseErrorKind`] and a zero-based
+//! character position.
 
 mod error;
 mod format;
@@ -132,10 +139,14 @@ pub fn format_cents_str(cents: &str) -> Result<String, FormatError> {
 /// # Errors
 ///
 /// - [`FormatError::NegativeAmount`] if the value starts with `-`.
-/// - [`FormatError::InvalidFormat`] if the string is empty, has more than one
-///   decimal point, or contains a character other than an ASCII digit or `.`.
+/// - [`FormatError::InvalidFormat`] if the string is empty, is a lone `.` with
+///   no digits on either side, has more than one decimal point, or has a
+///   non-digit in the integer part or in a fractional part of at most two
+///   bytes.
 /// - [`FormatError::TooManyDecimalPlaces`] if the fractional part is longer
-///   than two bytes (more than two decimal places for ASCII input).
+///   than two bytes (more than two decimal places for ASCII input). This is
+///   checked before validating the fraction's characters, so `1.xyz` reports
+///   this variant rather than `InvalidFormat`.
 /// - [`FormatError::TooLarge`] if the integer part exceeds [`MAX_YUAN`] or
 ///   the amount exceeds [`MAX_CENTS`].
 ///
@@ -208,16 +219,17 @@ pub fn format_f64(amount: f64) -> Result<String, FormatError> {
 ///
 /// - [`ParseErrorKind::Empty`] if the input is empty after trimming
 ///   whitespace and removing an optional `人民币` prefix.
-/// - [`ParseErrorKind::InvalidChar`] if the input contains a disallowed
-///   character, including lowercase numerals, ASCII digits, or whitespace
-///   inside the amount.
+/// - [`ParseErrorKind::InvalidChar`] if the input contains a character that
+///   is not allowed, including lowercase numerals, ASCII digits, or
+///   whitespace inside the amount. This lexical check runs before structural
+///   parsing, so `壹元整X` is `InvalidChar`.
 /// - [`ParseErrorKind::Ambiguous`] if a digit at the end of a section could
 ///   also be shorthand for the next lower unit, as in `壹仟肆佰玖元`,
 ///   `壹佰伍元`, `壹万伍元`, or `壹亿伍万元`.
 /// - [`ParseErrorKind::UnexpectedToken`] if units are repeated or out of
 ///   order, `零` is misplaced, the `兆` and `万亿` spellings are mixed,
-///   `元`/`角`/`分` are out of order or repeated, or there is text after
-///   `整`.
+///   `元`/`角`/`分` are out of order or repeated, a recognized token follows
+///   `整` (`壹元整伍角`), or the input is a bare `整` with no amount.
 /// - [`ParseErrorKind::MissingYuan`] if an integer part is present but
 ///   `元`/`圆`/`圓` is missing.
 ///
@@ -248,16 +260,17 @@ pub fn parse_cents(text: &str) -> Result<i128, ParseError> {
 ///
 /// - [`ParseErrorKind::Empty`] if the input is empty after trimming
 ///   whitespace and removing an optional `人民币` prefix.
-/// - [`ParseErrorKind::InvalidChar`] if the input contains a disallowed
-///   character, including lowercase numerals, ASCII digits, or whitespace
-///   inside the amount.
+/// - [`ParseErrorKind::InvalidChar`] if the input contains a character that
+///   is not allowed, including lowercase numerals, ASCII digits, or
+///   whitespace inside the amount. This lexical check runs before structural
+///   parsing, so `壹元整X` is `InvalidChar`.
 /// - [`ParseErrorKind::Ambiguous`] if a digit at the end of a section could
 ///   also be shorthand for the next lower unit, as in `壹仟肆佰玖元`,
 ///   `壹佰伍元`, `壹万伍元`, or `壹亿伍万元`.
 /// - [`ParseErrorKind::UnexpectedToken`] if units are repeated or out of
 ///   order, `零` is misplaced, the `兆` and `万亿` spellings are mixed,
-///   `元`/`角`/`分` are out of order or repeated, or there is text after
-///   `整`.
+///   `元`/`角`/`分` are out of order or repeated, a recognized token follows
+///   `整` (`壹元整伍角`), or the input is a bare `整` with no amount.
 /// - [`ParseErrorKind::MissingYuan`] if an integer part is present but
 ///   `元`/`圆`/`圓` is missing.
 ///
