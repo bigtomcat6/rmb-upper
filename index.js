@@ -10,113 +10,279 @@ const { join } = require('path')
 const { platform, arch } = process
 
 let nativeBinding = null
+let localFileExisted = false
 let loadError = null
 
 function isMusl() {
+  // For Node 10
   if (!process.report || typeof process.report.getReport !== 'function') {
     try {
       const lddPath = require('child_process').execSync('which ldd').toString().trim()
       return readFileSync(lddPath, 'utf8').includes('musl')
-    } catch (_) {
+    } catch (e) {
       return true
     }
-  }
-
-  const { glibcVersionRuntime } = process.report.getReport().header
-  return !glibcVersionRuntime
-}
-
-function loadBinding(localName, packageName) {
-  try {
-    const localPath = join(__dirname, localName)
-    if (existsSync(localPath)) {
-      return require(localPath)
-    }
-
-    return require(packageName)
-  } catch (error) {
-    loadError = error
-    return null
-  }
-}
-
-function loadDarwinBinding() {
-  const universal = loadBinding('RS-rmbToRMB.darwin-universal.node', '@rs/rmb-to-rmb-darwin-universal')
-  if (universal) {
-    return universal
-  }
-
-  switch (arch) {
-    case 'x64':
-      return loadBinding('RS-rmbToRMB.darwin-x64.node', '@rs/rmb-to-rmb-darwin-x64')
-    case 'arm64':
-      return loadBinding('RS-rmbToRMB.darwin-arm64.node', '@rs/rmb-to-rmb-darwin-arm64')
-    default:
-      throw new Error(`Unsupported architecture on macOS: ${arch}`)
-  }
-}
-
-function loadLinuxBinding() {
-  const libc = isMusl() ? 'musl' : 'gnu'
-
-  switch (arch) {
-    case 'x64':
-      return loadBinding(`RS-rmbToRMB.linux-x64-${libc}.node`, `@rs/rmb-to-rmb-linux-x64-${libc}`)
-    case 'arm64':
-      return loadBinding(`RS-rmbToRMB.linux-arm64-${libc}.node`, `@rs/rmb-to-rmb-linux-arm64-${libc}`)
-    case 'arm':
-      return loadBinding('RS-rmbToRMB.linux-arm-gnueabihf.node', '@rs/rmb-to-rmb-linux-arm-gnueabihf')
-    case 'riscv64':
-      return loadBinding(`RS-rmbToRMB.linux-riscv64-${libc}.node`, `@rs/rmb-to-rmb-linux-riscv64-${libc}`)
-    case 's390x':
-      return loadBinding('RS-rmbToRMB.linux-s390x-gnu.node', '@rs/rmb-to-rmb-linux-s390x-gnu')
-    default:
-      throw new Error(`Unsupported architecture on Linux: ${arch}`)
-  }
-}
-
-function loadWindowsBinding() {
-  switch (arch) {
-    case 'x64':
-      return loadBinding('RS-rmbToRMB.win32-x64-msvc.node', '@rs/rmb-to-rmb-win32-x64-msvc')
-    case 'ia32':
-      return loadBinding('RS-rmbToRMB.win32-ia32-msvc.node', '@rs/rmb-to-rmb-win32-ia32-msvc')
-    case 'arm64':
-      return loadBinding('RS-rmbToRMB.win32-arm64-msvc.node', '@rs/rmb-to-rmb-win32-arm64-msvc')
-    default:
-      throw new Error(`Unsupported architecture on Windows: ${arch}`)
-  }
-}
-
-function loadAndroidBinding() {
-  switch (arch) {
-    case 'arm64':
-      return loadBinding('RS-rmbToRMB.android-arm64.node', '@rs/rmb-to-rmb-android-arm64')
-    case 'arm':
-      return loadBinding('RS-rmbToRMB.android-arm-eabi.node', '@rs/rmb-to-rmb-android-arm-eabi')
-    default:
-      throw new Error(`Unsupported architecture on Android: ${arch}`)
+  } else {
+    const { glibcVersionRuntime } = process.report.getReport().header
+    return !glibcVersionRuntime
   }
 }
 
 switch (platform) {
   case 'android':
-    nativeBinding = loadAndroidBinding()
+    switch (arch) {
+      case 'arm64':
+        localFileExisted = existsSync(join(__dirname, 'rmb-upper.android-arm64.node'))
+        try {
+          if (localFileExisted) {
+            nativeBinding = require('./rmb-upper.android-arm64.node')
+          } else {
+            nativeBinding = require('rmb-upper-android-arm64')
+          }
+        } catch (e) {
+          loadError = e
+        }
+        break
+      case 'arm':
+        localFileExisted = existsSync(join(__dirname, 'rmb-upper.android-arm-eabi.node'))
+        try {
+          if (localFileExisted) {
+            nativeBinding = require('./rmb-upper.android-arm-eabi.node')
+          } else {
+            nativeBinding = require('rmb-upper-android-arm-eabi')
+          }
+        } catch (e) {
+          loadError = e
+        }
+        break
+      default:
+        throw new Error(`Unsupported architecture on Android ${arch}`)
+    }
+    break
+  case 'win32':
+    switch (arch) {
+      case 'x64':
+        localFileExisted = existsSync(
+          join(__dirname, 'rmb-upper.win32-x64-msvc.node')
+        )
+        try {
+          if (localFileExisted) {
+            nativeBinding = require('./rmb-upper.win32-x64-msvc.node')
+          } else {
+            nativeBinding = require('rmb-upper-win32-x64-msvc')
+          }
+        } catch (e) {
+          loadError = e
+        }
+        break
+      case 'ia32':
+        localFileExisted = existsSync(
+          join(__dirname, 'rmb-upper.win32-ia32-msvc.node')
+        )
+        try {
+          if (localFileExisted) {
+            nativeBinding = require('./rmb-upper.win32-ia32-msvc.node')
+          } else {
+            nativeBinding = require('rmb-upper-win32-ia32-msvc')
+          }
+        } catch (e) {
+          loadError = e
+        }
+        break
+      case 'arm64':
+        localFileExisted = existsSync(
+          join(__dirname, 'rmb-upper.win32-arm64-msvc.node')
+        )
+        try {
+          if (localFileExisted) {
+            nativeBinding = require('./rmb-upper.win32-arm64-msvc.node')
+          } else {
+            nativeBinding = require('rmb-upper-win32-arm64-msvc')
+          }
+        } catch (e) {
+          loadError = e
+        }
+        break
+      default:
+        throw new Error(`Unsupported architecture on Windows: ${arch}`)
+    }
     break
   case 'darwin':
-    nativeBinding = loadDarwinBinding()
+    localFileExisted = existsSync(join(__dirname, 'rmb-upper.darwin-universal.node'))
+    try {
+      if (localFileExisted) {
+        nativeBinding = require('./rmb-upper.darwin-universal.node')
+      } else {
+        nativeBinding = require('rmb-upper-darwin-universal')
+      }
+      break
+    } catch {}
+    switch (arch) {
+      case 'x64':
+        localFileExisted = existsSync(join(__dirname, 'rmb-upper.darwin-x64.node'))
+        try {
+          if (localFileExisted) {
+            nativeBinding = require('./rmb-upper.darwin-x64.node')
+          } else {
+            nativeBinding = require('rmb-upper-darwin-x64')
+          }
+        } catch (e) {
+          loadError = e
+        }
+        break
+      case 'arm64':
+        localFileExisted = existsSync(
+          join(__dirname, 'rmb-upper.darwin-arm64.node')
+        )
+        try {
+          if (localFileExisted) {
+            nativeBinding = require('./rmb-upper.darwin-arm64.node')
+          } else {
+            nativeBinding = require('rmb-upper-darwin-arm64')
+          }
+        } catch (e) {
+          loadError = e
+        }
+        break
+      default:
+        throw new Error(`Unsupported architecture on macOS: ${arch}`)
+    }
     break
   case 'freebsd':
     if (arch !== 'x64') {
       throw new Error(`Unsupported architecture on FreeBSD: ${arch}`)
     }
-    nativeBinding = loadBinding('RS-rmbToRMB.freebsd-x64.node', '@rs/rmb-to-rmb-freebsd-x64')
+    localFileExisted = existsSync(join(__dirname, 'rmb-upper.freebsd-x64.node'))
+    try {
+      if (localFileExisted) {
+        nativeBinding = require('./rmb-upper.freebsd-x64.node')
+      } else {
+        nativeBinding = require('rmb-upper-freebsd-x64')
+      }
+    } catch (e) {
+      loadError = e
+    }
     break
   case 'linux':
-    nativeBinding = loadLinuxBinding()
-    break
-  case 'win32':
-    nativeBinding = loadWindowsBinding()
+    switch (arch) {
+      case 'x64':
+        if (isMusl()) {
+          localFileExisted = existsSync(
+            join(__dirname, 'rmb-upper.linux-x64-musl.node')
+          )
+          try {
+            if (localFileExisted) {
+              nativeBinding = require('./rmb-upper.linux-x64-musl.node')
+            } else {
+              nativeBinding = require('rmb-upper-linux-x64-musl')
+            }
+          } catch (e) {
+            loadError = e
+          }
+        } else {
+          localFileExisted = existsSync(
+            join(__dirname, 'rmb-upper.linux-x64-gnu.node')
+          )
+          try {
+            if (localFileExisted) {
+              nativeBinding = require('./rmb-upper.linux-x64-gnu.node')
+            } else {
+              nativeBinding = require('rmb-upper-linux-x64-gnu')
+            }
+          } catch (e) {
+            loadError = e
+          }
+        }
+        break
+      case 'arm64':
+        if (isMusl()) {
+          localFileExisted = existsSync(
+            join(__dirname, 'rmb-upper.linux-arm64-musl.node')
+          )
+          try {
+            if (localFileExisted) {
+              nativeBinding = require('./rmb-upper.linux-arm64-musl.node')
+            } else {
+              nativeBinding = require('rmb-upper-linux-arm64-musl')
+            }
+          } catch (e) {
+            loadError = e
+          }
+        } else {
+          localFileExisted = existsSync(
+            join(__dirname, 'rmb-upper.linux-arm64-gnu.node')
+          )
+          try {
+            if (localFileExisted) {
+              nativeBinding = require('./rmb-upper.linux-arm64-gnu.node')
+            } else {
+              nativeBinding = require('rmb-upper-linux-arm64-gnu')
+            }
+          } catch (e) {
+            loadError = e
+          }
+        }
+        break
+      case 'arm':
+        localFileExisted = existsSync(
+          join(__dirname, 'rmb-upper.linux-arm-gnueabihf.node')
+        )
+        try {
+          if (localFileExisted) {
+            nativeBinding = require('./rmb-upper.linux-arm-gnueabihf.node')
+          } else {
+            nativeBinding = require('rmb-upper-linux-arm-gnueabihf')
+          }
+        } catch (e) {
+          loadError = e
+        }
+        break
+      case 'riscv64':
+        if (isMusl()) {
+          localFileExisted = existsSync(
+            join(__dirname, 'rmb-upper.linux-riscv64-musl.node')
+          )
+          try {
+            if (localFileExisted) {
+              nativeBinding = require('./rmb-upper.linux-riscv64-musl.node')
+            } else {
+              nativeBinding = require('rmb-upper-linux-riscv64-musl')
+            }
+          } catch (e) {
+            loadError = e
+          }
+        } else {
+          localFileExisted = existsSync(
+            join(__dirname, 'rmb-upper.linux-riscv64-gnu.node')
+          )
+          try {
+            if (localFileExisted) {
+              nativeBinding = require('./rmb-upper.linux-riscv64-gnu.node')
+            } else {
+              nativeBinding = require('rmb-upper-linux-riscv64-gnu')
+            }
+          } catch (e) {
+            loadError = e
+          }
+        }
+        break
+      case 's390x':
+        localFileExisted = existsSync(
+          join(__dirname, 'rmb-upper.linux-s390x-gnu.node')
+        )
+        try {
+          if (localFileExisted) {
+            nativeBinding = require('./rmb-upper.linux-s390x-gnu.node')
+          } else {
+            nativeBinding = require('rmb-upper-linux-s390x-gnu')
+          }
+        } catch (e) {
+          loadError = e
+        }
+        break
+      default:
+        throw new Error(`Unsupported architecture on Linux: ${arch}`)
+    }
     break
   default:
     throw new Error(`Unsupported OS: ${platform}, architecture: ${arch}`)
@@ -126,11 +292,11 @@ if (!nativeBinding) {
   if (loadError) {
     throw loadError
   }
-  throw new Error('Failed to load native binding')
+  throw new Error(`Failed to load native binding`)
 }
 
-const { rmbToRmb, rmbToRmbFromCents, rmbToRmbFromString } = nativeBinding
+const { formatNumber, formatCents, formatDecimal } = nativeBinding
 
-module.exports.rmbToRmb = rmbToRmb
-module.exports.rmbToRmbFromCents = rmbToRmbFromCents
-module.exports.rmbToRmbFromString = rmbToRmbFromString
+module.exports.formatNumber = formatNumber
+module.exports.formatCents = formatCents
+module.exports.formatDecimal = formatDecimal

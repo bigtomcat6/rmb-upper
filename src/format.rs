@@ -1,4 +1,4 @@
-pub fn format_amount(integer: u128, fraction: u8) -> String {
+pub(crate) fn format_amount(integer: u128, fraction: u8) -> String {
     let mut out = format_integer(integer);
     push_code(&mut out, 0x5143);
     out.push_str(&format_fraction(fraction, integer > 0));

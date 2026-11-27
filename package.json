@@ -1,11 +1,11 @@
 {
-  "name": "@rs/rmb-to-rmb",
+  "name": "rmb-upper",
   "version": "0.1.0",
-  "description": "Convert RMB/CNY amounts to Chinese uppercase financial text from Rust or Node.js.",
+  "description": "Convert RMB/CNY amounts to and from Chinese uppercase financial text (人民币金额大写).",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
-    "name": "RS-rmbToRMB",
+    "name": "rmb-upper",
     "triples": {}
   },
   "license": "MIT",

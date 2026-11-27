@@ -1,3 +1,3 @@
-# `RS-rmbToRMB-darwin-x64`
+# `rmb-upper-darwin-x64`
 
-This is the **x86_64-apple-darwin** binary for `RS-rmbToRMB`
+This is the **x86_64-apple-darwin** binary for `rmb-upper`
