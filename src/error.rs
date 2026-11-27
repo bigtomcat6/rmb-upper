@@ -34,7 +34,11 @@ pub struct ParseError {
     /// Zero-based character offset in the original input, including any
     /// surrounding whitespace and the `人民币` prefix.
     ///
-    /// Missing delimiters and empty input report the input length.
+    /// For [`ParseErrorKind::MissingYuan`], this is the position where `元`
+    /// should be inserted: before a trailing `整`/`正`, before the leading
+    /// `零` of the fraction, before the first fraction digit (or `角`/`分`
+    /// when there is no digit), or at the end of the input when the integer
+    /// part ends there. [`ParseErrorKind::Empty`] reports the input length.
     pub position: usize,
 }
 

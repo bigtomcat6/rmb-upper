@@ -30,6 +30,7 @@ struct Pending {
     digit: u8,
     position: usize,
     allowed_naked: bool,
+    fraction_position: usize,
 }
 
 fn error(kind: ParseErrorKind, position: usize) -> ParseError {
@@ -113,6 +114,9 @@ fn parse_tokens(tokens: &[Token], end: usize) -> Result<i128, ParseError> {
         if matches!(tokens.get(1).map(|token| token.kind), Some(TokenKind::Yuan)) {
             return parse_fraction(tokens, 2, 0, end);
         }
+        if tokens.len() == 1 {
+            return Err(error(ParseErrorKind::MissingYuan, end));
+        }
         return Err(error(ParseErrorKind::UnexpectedToken, tokens[0].position));
     }
 
@@ -135,6 +139,7 @@ fn parse_integer(tokens: &[Token], end: usize) -> Result<i128, ParseError> {
     let mut pending: Option<Pending> = None;
     let mut last_small: Option<u16> = None;
     let mut zero_last = false;
+    let mut zero_position = 0_usize;
     let mut started = false;
     let mut previous_kind: Option<TokenKind> = None;
     let mut deferred_ambiguity: Option<usize> = None;
@@ -148,6 +153,7 @@ fn parse_integer(tokens: &[Token], end: usize) -> Result<i128, ParseError> {
                     return Err(error(ParseErrorKind::UnexpectedToken, token.position));
                 }
                 zero_last = true;
+                zero_position = token.position;
                 previous_kind = Some(TokenKind::Zero);
                 index += 1;
             }
@@ -157,10 +163,16 @@ fn parse_integer(tokens: &[Token], end: usize) -> Result<i128, ParseError> {
                 }
                 let allowed_naked =
                     !started || zero_last || matches!(previous_kind, Some(TokenKind::Small(10)));
+                let fraction_position = if zero_last {
+                    zero_position
+                } else {
+                    token.position
+                };
                 pending = Some(Pending {
                     digit,
                     position: token.position,
                     allowed_naked,
+                    fraction_position,
                 });
                 zero_last = false;
                 started = true;
@@ -184,7 +196,12 @@ fn parse_integer(tokens: &[Token], end: usize) -> Result<i128, ParseError> {
                 if last_small.is_some_and(|last| unit >= last) {
                     return Err(error(ParseErrorKind::UnexpectedToken, token.position));
                 }
-                section += i128::from(value.digit) * i128::from(unit);
+                let increment = i128::from(value.digit)
+                    .checked_mul(i128::from(unit))
+                    .ok_or_else(|| error(ParseErrorKind::UnexpectedToken, token.position))?;
+                section = section
+                    .checked_add(increment)
+                    .ok_or_else(|| error(ParseErrorKind::UnexpectedToken, token.position))?;
                 last_small = Some(unit);
                 started = true;
                 previous_kind = Some(TokenKind::Small(unit));
@@ -194,7 +211,7 @@ fn parse_integer(tokens: &[Token], end: usize) -> Result<i128, ParseError> {
                 let composite =
                     unit == BigUnit::Yi && units.len() == 1 && units[0].0 == BigUnit::Wan;
                 push_unit(&mut units, unit, token.position)?;
-                if let Some(position) = resolve_pending(&mut pending, &mut section) {
+                if let Some(position) = resolve_pending(&mut pending, &mut section)? {
                     deferred_ambiguity.get_or_insert(position);
                 }
                 if zero_last {
@@ -212,7 +229,7 @@ fn parse_integer(tokens: &[Token], end: usize) -> Result<i128, ParseError> {
                 index += 1;
             }
             TokenKind::Yuan => {
-                if let Some(position) = resolve_pending(&mut pending, &mut section) {
+                if let Some(position) = resolve_pending(&mut pending, &mut section)? {
                     deferred_ambiguity.get_or_insert(position);
                 }
                 if let Some(position) = deferred_ambiguity {
@@ -232,7 +249,7 @@ fn parse_integer(tokens: &[Token], end: usize) -> Result<i128, ParseError> {
                 if zero_last {
                     return Err(error(ParseErrorKind::UnexpectedToken, token.position));
                 }
-                let position = pending.map_or(token.position, |value| value.position);
+                let position = pending.map_or(token.position, |value| value.fraction_position);
                 return Err(error(ParseErrorKind::MissingYuan, position));
             }
             TokenKind::Zheng => {
@@ -242,13 +259,12 @@ fn parse_integer(tokens: &[Token], end: usize) -> Result<i128, ParseError> {
                 if zero_last {
                     return Err(error(ParseErrorKind::UnexpectedToken, token.position));
                 }
-                let position = pending.map_or(token.position, |value| value.position);
-                return Err(error(ParseErrorKind::MissingYuan, position));
+                return Err(error(ParseErrorKind::MissingYuan, token.position));
             }
         }
     }
 
-    if let Some(position) = resolve_pending(&mut pending, &mut section) {
+    if let Some(position) = resolve_pending(&mut pending, &mut section)? {
         deferred_ambiguity.get_or_insert(position);
     }
     if let Some(position) = deferred_ambiguity {
@@ -264,13 +280,20 @@ fn parse_integer(tokens: &[Token], end: usize) -> Result<i128, ParseError> {
     Err(error(ParseErrorKind::MissingYuan, end))
 }
 
-fn resolve_pending(pending: &mut Option<Pending>, section: &mut i128) -> Option<usize> {
-    let value = pending.take()?;
-    *section += i128::from(value.digit);
+fn resolve_pending(
+    pending: &mut Option<Pending>,
+    section: &mut i128,
+) -> Result<Option<usize>, ParseError> {
+    let Some(value) = pending.take() else {
+        return Ok(None);
+    };
+    *section = section
+        .checked_add(i128::from(value.digit))
+        .ok_or_else(|| error(ParseErrorKind::UnexpectedToken, value.position))?;
     if value.allowed_naked {
-        None
+        Ok(None)
     } else {
-        Some(value.position)
+        Ok(Some(value.position))
     }
 }
 
@@ -451,9 +474,13 @@ fn parse_fraction(
         }
     }
 
+    let fraction = i128::from(jiao)
+        .checked_mul(10)
+        .and_then(|value| value.checked_add(i128::from(fen)))
+        .ok_or_else(|| error(ParseErrorKind::UnexpectedToken, end))?;
     let cents = yuan
         .checked_mul(100)
-        .and_then(|value| value.checked_add(i128::from(jiao) * 10 + i128::from(fen)))
+        .and_then(|value| value.checked_add(fraction))
         .ok_or_else(|| error(ParseErrorKind::UnexpectedToken, end))?;
     if cents > MAX_CENTS {
         return Err(error(ParseErrorKind::UnexpectedToken, end));

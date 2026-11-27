@@ -77,6 +77,8 @@ fn parses_variant_spellings() {
             MAX_CENTS,
         ),
         ("壹元壹角壹分整", 111),
+        ("零元", 0),
+        ("零元整", 0),
     ];
 
     for (text, cents) in cases {
@@ -141,6 +143,7 @@ fn rejects_unexpected_tokens() {
         ("伍角壹元", 3),
         ("壹角壹角", 3),
         ("壹元整伍角", 3),
+        ("零伍角", 0),
         ("整", 0),
     ];
     for (text, position) in cases {
@@ -153,9 +156,13 @@ fn rejects_missing_yuan() {
     let cases = [
         ("壹佰", 2),
         ("壹佰伍角", 2),
+        ("壹佰零伍角", 2),
         ("壹佰伍分", 2),
+        ("壹拾伍整", 3),
         ("人民币壹佰", 5),
         ("人民币壹佰伍角", 5),
+        ("零", 1),
+        ("　人民币零　", 6),
     ];
     for (text, position) in cases {
         expect_error(text, ParseErrorKind::MissingYuan, position);
