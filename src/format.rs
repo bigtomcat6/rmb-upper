@@ -1,7 +1,11 @@
 pub(crate) fn format_amount(integer: u128, fraction: u8) -> String {
     let mut out = format_integer(integer);
     push_code(&mut out, 0x5143);
-    out.push_str(&format_fraction(fraction, integer > 0));
+    out.push_str(&format_fraction(
+        fraction,
+        integer > 0,
+        integer.is_multiple_of(10),
+    ));
     out
 }
 
@@ -33,6 +37,9 @@ fn format_integer(integer: u128) -> String {
 
         out.push_str(&format_group(group));
         push_group_unit(&mut out, index);
+        if index == 3 && groups[2] == 0 {
+            push_code(&mut out, 0x4ebf);
+        }
         zero_gap = false;
     }
 
@@ -69,10 +76,11 @@ fn format_group(group: u16) -> String {
     out
 }
 
-fn format_fraction(fraction: u8, integer_non_zero: bool) -> String {
+fn format_fraction(fraction: u8, integer_non_zero: bool, yuan_is_zero: bool) -> String {
     let jiao = (fraction / 10) as usize;
     let fen = (fraction % 10) as usize;
     let mut out = String::new();
+    let needs_yuan_zero = integer_non_zero && yuan_is_zero;
 
     match (jiao, fen) {
         (0, 0) => push_code(&mut out, 0x6574),
@@ -86,10 +94,16 @@ fn format_fraction(fraction: u8, integer_non_zero: bool) -> String {
             push_code(&mut out, 0x5206);
         }
         (jiao, 0) => {
+            if needs_yuan_zero {
+                push_digit(&mut out, 0);
+            }
             push_digit(&mut out, jiao);
             push_code(&mut out, 0x89d2);
         }
         (jiao, fen) => {
+            if needs_yuan_zero {
+                push_digit(&mut out, 0);
+            }
             push_digit(&mut out, jiao);
             push_code(&mut out, 0x89d2);
             push_digit(&mut out, fen);
@@ -135,7 +149,7 @@ fn push_group_unit(out: &mut String, index: usize) {
         0 => None,
         1 => Some(0x4e07),
         2 => Some(0x4ebf),
-        3 => Some(0x5146),
+        3 => Some(0x4e07),
         _ => unreachable!(),
     };
     if let Some(code) = code {
