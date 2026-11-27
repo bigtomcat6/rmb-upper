@@ -2,10 +2,7 @@
 
 Convert RMB/CNY amounts to and from Chinese uppercase financial text (人民币金额大写).
 
-这个项目现在由两层组成：
-
-1. **Pure Rust library**: 可直接被 Rust backend、CLI、WASM 或其他 binding 复用。
-2. **N-API wrapper**: 保留原来的 Node.js 原生扩展能力。
+A small, dependency-free Rust library.
 
 ## Installation
 
@@ -35,7 +32,7 @@ assert_eq!(format_decimal("123.45").unwrap(), "壹佰贰拾叁元肆角伍分");
 assert_eq!(format_decimal("0.01").unwrap(), "零元壹分");
 ```
 
-For cross-language bindings or platforms where large integers may lose precision, use `format_cents_str`:
+When the amount in cents arrives as a string (for example from JSON or a database), use `format_cents_str`:
 
 ```rust
 use rmb_upper::format_cents_str;
@@ -100,53 +97,9 @@ assert_eq!(parse_decimal("零元伍分").unwrap(), "0.05");
 
 Parsing accepts an optional `人民币` prefix, surrounding whitespace, the traditional characters listed in the financial uppercase rules, and fraction-only amounts such as `伍角` or `伍分` without `元`. Invalid input returns `ParseError` with a `ParseErrorKind` and a zero-based character position in the original input. When an amount has an integer part, `元`/`圆`/`圓` is required; ambiguous spellings are rejected.
 
-## Node.js / N-API usage
-
-The original `formatNumber(number)` API is still available for compatibility. It accepts a JavaScript number and rounds to the nearest cent.
-
-```ts
-import { formatNumber } from 'rmb-upper'
-
-formatNumber(123.45) // "壹佰贰拾叁元肆角伍分"
-```
-
-For deterministic formatting, prefer string-based APIs:
-
-```ts
-import { formatCents, formatDecimal } from 'rmb-upper'
-
-formatCents('12345') // "壹佰贰拾叁元肆角伍分"
-formatDecimal('123.45') // "壹佰贰拾叁元肆角伍分"
-```
-
-The N-API wrapper is built with [napi-rs](https://github.com/napi-rs/napi-rs).
-
-## Building
-
-### Rust library
+## Development
 
 ```bash
 cargo build
 cargo test
-```
-
-### N-API wrapper
-
-```bash
-pnpm i
-pnpm build
-```
-
-The N-API build compiles the Rust core in `bindings/node` into a Node.js native addon.
-
-## Testing
-
-```bash
-cargo test
-```
-
-For JavaScript tests:
-
-```bash
-pnpm test:js
 ```
